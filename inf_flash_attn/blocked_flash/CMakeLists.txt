@@ -44,8 +44,12 @@ list(APPEND NVCC_FLAGS "-U__CUDA_NO_HALF2_OPERATORS__")
 list(APPEND NVCC_FLAGS "-U__CUDA_NO_BFLOAT16_CONVERSIONS__")
 list(APPEND NVCC_FLAGS "-expt-relaxed-constexpr")
 list(APPEND NVCC_FLAGS "--use_fast_math")
-list(APPEND NVCC_FLAGS "--ptxas-options=-v")
-list(APPEND NVCC_FLAGS "-fmax-errors=1")
+
+set(VERBOSE_BUILD 0)
+
+if (VERBOSE_BUILD)
+    list(APPEND NVCC_FLAGS "--ptxas-options=-v")
+endif()
 
 message(STATUS "NVCC_FLAGS: ${NVCC_FLAGS}")
 

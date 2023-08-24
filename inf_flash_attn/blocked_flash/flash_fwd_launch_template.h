@@ -71,8 +71,10 @@ template <typename T>
 void run_mha_fwd_hdim96(Flash_fwd_params& params, cudaStream_t stream)
 {
     constexpr int Headdim = 96;
-    // auto dprops = at::cuda::getCurrentDeviceProperties();
-    bool is_sm8x = true; // dprops->major == 8 && dprops->minor > 0;
+    int cc_major, cc_minor;
+    cudaDeviceGetAttribute(&cc_major, cudaDevAttrComputeCapabilityMajor, 0);
+    cudaDeviceGetAttribute(&cc_minor, cudaDevAttrComputeCapabilityMinor, 0);
+    bool is_sm8x = cc_major == 8 && cc_minor > 0;
     BOOL_SWITCH(params.is_causal, Is_causal, [&] {
         // For sm86 or sm89, 64 x 64 is the fastest for causal (because it's square),
         if (is_sm8x) {
@@ -99,8 +101,10 @@ template <typename T>
 void run_mha_fwd_hdim128(Flash_fwd_params& params, cudaStream_t stream)
 {
     constexpr int Headdim = 128;
-    // auto dprops = at::cuda::getCurrentDeviceProperties();
-    bool is_sm8x = true; // dprops->major == 8 && dprops->minor > 0;
+    int cc_major, cc_minor;
+    cudaDeviceGetAttribute(&cc_major, cudaDevAttrComputeCapabilityMajor, 0);
+    cudaDeviceGetAttribute(&cc_minor, cudaDevAttrComputeCapabilityMinor, 0);
+    bool is_sm8x = cc_major == 8 && cc_minor > 0;
     BOOL_SWITCH(params.is_causal, Is_causal, [&] {
         // For sm86 or sm89, 64 x 64 is the fastest for causal (because it's square),
         // and 128 x 32 (48 KB smem) is the fastest for non-causal since we get 2 CTAs per SM.
