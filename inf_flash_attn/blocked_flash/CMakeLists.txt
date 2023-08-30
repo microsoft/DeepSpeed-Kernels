@@ -51,8 +51,6 @@ if (VERBOSE_BUILD)
     list(APPEND NVCC_FLAGS "--ptxas-options=-v")
 endif()
 
-message(STATUS "NVCC_FLAGS: ${NVCC_FLAGS}")
-
 file(GLOB SRC_FILES *.cu)
 
 target_sources(${LIB_NAME} PRIVATE ${SRC_FILES})
@@ -60,3 +58,6 @@ target_link_libraries(${LIB_NAME} "${TORCH_LIBRARIES}")
 target_compile_options(${LIB_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${NVCC_FLAGS}>)
 set_target_properties(${LIB_NAME} PROPERTIES CUDA_ARCHITECTURES "80;86;89;90")
 set_target_properties(${LIB_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../lib)
+
+# Show timings?
+set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CMAKE_COMMAND} -E time")
