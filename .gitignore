@@ -1,2 +1,5 @@
 **/build/**
 **/lib/**
+
+# Dev/IDE data
+.vscode
