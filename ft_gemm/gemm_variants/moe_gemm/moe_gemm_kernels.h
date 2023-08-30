@@ -16,7 +16,7 @@
 
 #pragma once
 #include "cutlass_extensions/ft_gemm_configs.h"
-#include "activation_type.h"
+#include "utils/activation_type.h"
 #include <cuda_runtime_api.h>
 
 namespace fastertransformer {

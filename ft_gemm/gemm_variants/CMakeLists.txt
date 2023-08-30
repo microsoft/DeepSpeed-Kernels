@@ -54,7 +54,7 @@ add_definitions(-DENABLE_BF16)
 add_definitions(-DBUILD_CUTLASS_MOE)
 add_definitions(-DBUILD_CUTLASS_MIXED_GEMM)
 
-add_library(cutlass_heuristic STATIC cutlass_heuristic.cc)
+add_library(cutlass_heuristic STATIC utils/cutlass_heuristic.cc)
 target_include_directories(cutlass_heuristic PRIVATE
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -62,7 +62,7 @@ target_include_directories(cutlass_heuristic PRIVATE
 set_property(TARGET cutlass_heuristic PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_compile_options(cutlass_heuristic PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${NVCC_FLAGS}>)
 
-add_library(cutlass_preprocessors STATIC cutlass_preprocessors.cc)
+add_library(cutlass_preprocessors STATIC utils/cutlass_preprocessors.cc)
 target_include_directories(cutlass_preprocessors PRIVATE
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
     ${CMAKE_CURRENT_SOURCE_DIR}

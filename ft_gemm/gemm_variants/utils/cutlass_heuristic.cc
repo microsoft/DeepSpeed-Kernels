@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "cutlass_heuristic.h"
+#include "utils/cutlass_heuristic.h"
 #include "cuda_bf16.h"
 
 #pragma GCC diagnostic push

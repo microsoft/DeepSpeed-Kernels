@@ -18,7 +18,7 @@
 #include <cuda_runtime_api.h>
 
 #include "cutlass/device_kernel.h"
-#include "cuda_utils.h"
+#include "utils/cuda_utils.h"
 
 namespace fastertransformer {
 

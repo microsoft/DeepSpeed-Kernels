@@ -32,9 +32,9 @@
 
 #pragma GCC diagnostic pop
 
-#include "cutlass_heuristic.h"
+#include "utils/cutlass_heuristic.h"
 #include "moe_gemm/moe_gemm_kernels.h"
-#include "cuda_utils.h"
+#include "utils/cuda_utils.h"
 #include <cuda.h>
 #include <cuda_fp16.h>
 #include <math.h>

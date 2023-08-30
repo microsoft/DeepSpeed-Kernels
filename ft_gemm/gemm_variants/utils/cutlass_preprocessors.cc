@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "cutlass_preprocessors.h"
-#include "string_utils.h"
+#include "utils/cutlass_preprocessors.h"
+#include "utils/string_utils.h"
 #include "cuda_bf16.h"
 
 #include "cutlass_extensions/gemm/kernel/mixed_gemm_B_layout.h"

@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "cuda_utils.h"
+#include "utils/cuda_utils.h"
 
 namespace fastertransformer {
 enum class QuantType {
