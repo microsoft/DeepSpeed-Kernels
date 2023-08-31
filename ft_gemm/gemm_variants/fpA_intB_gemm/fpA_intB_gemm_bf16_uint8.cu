@@ -18,6 +18,6 @@
 
 namespace fastertransformer {
 #ifdef ENABLE_BF16
-template class CutlassFpAIntBGemmRunner<__nv_bfloat16, uint8_t>;
+template class CutlassFpAIntBGemmRunner<__nv_bfloat16, WeightVariant::kFP8>;
 #endif
 }  // namespace fastertransformer

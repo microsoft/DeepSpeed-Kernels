@@ -18,6 +18,6 @@
 
 namespace fastertransformer {
 #ifdef ENABLE_BF16
-template class MoeGemmRunner<__nv_bfloat16, __nv_bfloat16>;
+template class MoeGemmRunner<__nv_bfloat16, WeightVariant::kBF16>;
 #endif
 }  // namespace fastertransformer

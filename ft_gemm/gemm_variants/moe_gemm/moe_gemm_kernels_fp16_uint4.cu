@@ -17,5 +17,5 @@
 #include "moe_gemm/moe_gemm_kernels_template.h"
 
 namespace fastertransformer {
-template class MoeGemmRunner<half, cutlass::uint4b_t>;
+template class MoeGemmRunner<half, WeightVariant::kFP4>;
 }

@@ -391,8 +391,8 @@ void dispatch_gemm_to_cutlass(const T*          A,
     }
 }
 
-template<typename T, typename WeightType>
-CutlassFpAIntBGemmRunner<T, WeightType>::CutlassFpAIntBGemmRunner()
+template<typename T, WeightVariant V>
+CutlassFpAIntBGemmRunner<T, V>::CutlassFpAIntBGemmRunner()
 {
     int device{-1};
     check_cuda_error(cudaGetDevice(&device));
@@ -400,27 +400,27 @@ CutlassFpAIntBGemmRunner<T, WeightType>::CutlassFpAIntBGemmRunner()
     check_cuda_error(cudaDeviceGetAttribute(&multi_processor_count_, cudaDevAttrMultiProcessorCount, device));
 }
 
-template<typename T, typename WeightType>
-CutlassFpAIntBGemmRunner<T, WeightType>::~CutlassFpAIntBGemmRunner()
+template<typename T, WeightVariant V>
+CutlassFpAIntBGemmRunner<T, V>::~CutlassFpAIntBGemmRunner()
 {
 
 }
 
-template<typename T, typename WeightType>
+template<typename T, WeightVariant V>
 template<typename EpilogueTag>
-void CutlassFpAIntBGemmRunner<T, WeightType>::dispatch_to_arch<EpilogueTag>(const T*          A,
-                                                                            const WeightType* B,
-                                                                            const T*          weight_scales,
-                                                                            const T*          biases,
-                                                                            T*                C,
-                                                                            int               m,
-                                                                            int               n,
-                                                                            int               k,
-                                                                            CutlassGemmConfig gemm_config,
-                                                                            char*             workspace_ptr,
-                                                                            const size_t      workspace_bytes,
-                                                                            cudaStream_t      stream,
-                                                                            int*              occupancy)
+void CutlassFpAIntBGemmRunner<T, V>::dispatch_to_arch<EpilogueTag>(const T*          A,
+                                                                   const WeightType* B,
+                                                                   const T*          weight_scales,
+                                                                   const T*          biases,
+                                                                   T*                C,
+                                                                   int               m,
+                                                                   int               n,
+                                                                   int               k,
+                                                                   CutlassGemmConfig gemm_config,
+                                                                   char*             workspace_ptr,
+                                                                   const size_t      workspace_bytes,
+                                                                   cudaStream_t      stream,
+                                                                   int*              occupancy)
 {
     if (sm_ >= 70 && sm_ < 75) {
         dispatch_gemm_to_cutlass<T, WeightType, cutlass::arch::Sm70, EpilogueTag>(
@@ -440,19 +440,19 @@ void CutlassFpAIntBGemmRunner<T, WeightType>::dispatch_to_arch<EpilogueTag>(cons
     }
 }
 
-template<typename T, typename WeightType>
+template<typename T, WeightVariant V>
 template<typename EpilogueTag>
-void CutlassFpAIntBGemmRunner<T, WeightType>::run_gemm<EpilogueTag>(const T*          A,
-                                                                    const WeightType* B,
-                                                                    const T*          weight_scales,
-                                                                    const T*          biases,
-                                                                    T*                C,
-                                                                    int               m,
-                                                                    int               n,
-                                                                    int               k,
-                                                                    char*             workspace_ptr,
-                                                                    const size_t      workspace_bytes,
-                                                                    cudaStream_t      stream)
+void CutlassFpAIntBGemmRunner<T, V>::run_gemm<EpilogueTag>(const T*          A,
+                                                           const WeightType* B,
+                                                           const T*          weight_scales,
+                                                           const T*          biases,
+                                                           T*                C,
+                                                           int               m,
+                                                           int               n,
+                                                           int               k,
+                                                           char*             workspace_ptr,
+                                                           const size_t      workspace_bytes,
+                                                           cudaStream_t      stream)
 {
     static constexpr bool          is_weight_only    = !std::is_same<T, WeightType>::value;
     std::vector<CutlassGemmConfig> candidate_configs = get_candidate_configs(sm_, is_weight_only, false);
@@ -490,35 +490,35 @@ void CutlassFpAIntBGemmRunner<T, WeightType>::run_gemm<EpilogueTag>(const T*    
         A, B, weight_scales, biases, C, m, n, k, chosen_config, workspace_ptr, workspace_bytes, stream);
 }
 
-template<typename T, typename WeightType>
-void CutlassFpAIntBGemmRunner<T, WeightType>::gemm_bias_act(const T*          A,
-                                                            const WeightType* B,
-                                                            const T*          weight_scales,
-                                                            const T*          biases,
-                                                            T*                C,
-                                                            int               m,
-                                                            int               n,
-                                                            int               k,
-                                                            ActivationType    activation_type,
-                                                            char*             workspace_ptr,
-                                                            const size_t      workspace_bytes,
-                                                            cudaStream_t      stream)
+template<typename T, WeightVariant V>
+void CutlassFpAIntBGemmRunner<T, V>::gemm_bias_act(const T*          A,
+                                                  const char* B,
+                                                  const T*          weight_scales,
+                                                  const T*          biases,
+                                                  T*                C,
+                                                  int               m,
+                                                  int               n,
+                                                  int               k,
+                                                  ActivationType    activation_type,
+                                                  char*             workspace_ptr,
+                                                  const size_t      workspace_bytes,
+                                                  cudaStream_t      stream)
 {
     switch (activation_type) {
         case ActivationType::RELU:
             run_gemm<EpilogueOpBiasReLU>(
-                A, B, weight_scales, biases, C, m, n, k, workspace_ptr, workspace_bytes, stream);
+                A, (WeightType*)B, weight_scales, biases, C, m, n, k, workspace_ptr, workspace_bytes, stream);
             break;
         case ActivationType::GELU:
             run_gemm<EpilogueOpBiasFtGelu>(
-                A, B, weight_scales, biases, C, m, n, k, workspace_ptr, workspace_bytes, stream);
+                A, (WeightType*)B, weight_scales, biases, C, m, n, k, workspace_ptr, workspace_bytes, stream);
             break;
         case ActivationType::SILU:
             run_gemm<EpilogueOpBiasSilu>(
-                A, B, weight_scales, biases, C, m, n, k, workspace_ptr, workspace_bytes, stream);
+                A, (WeightType*)B, weight_scales, biases, C, m, n, k, workspace_ptr, workspace_bytes, stream);
             break;
         case ActivationType::IDENTITY:
-            run_gemm<EpilogueOpBias>(A, B, weight_scales, biases, C, m, n, k, workspace_ptr, workspace_bytes, stream);
+            run_gemm<EpilogueOpBias>(A, (WeightType*)B, weight_scales, biases, C, m, n, k, workspace_ptr, workspace_bytes, stream);
             break;
         case ActivationType::InvalidType:
             FT_CHECK_WITH_INFO(false, "Activation type for fpA_intB must be valid.");
@@ -534,23 +534,23 @@ void CutlassFpAIntBGemmRunner<T, WeightType>::gemm_bias_act(const T*          A,
     }
 }
 
-template<typename T, typename WeightType>
-void CutlassFpAIntBGemmRunner<T, WeightType>::gemm(const T*          A,
-                                                   const WeightType* B,
-                                                   const T*          weight_scales,
-                                                   T*                C,
-                                                   int               m,
-                                                   int               n,
-                                                   int               k,
-                                                   char*             workspace_ptr,
-                                                   const size_t      workspace_bytes,
-                                                   cudaStream_t      stream)
+template<typename T, WeightVariant V>
+void CutlassFpAIntBGemmRunner<T, V>::gemm(const T*          A,
+                                         const char* B,
+                                         const T*          weight_scales,
+                                         T*                C,
+                                         int               m,
+                                         int               n,
+                                         int               k,
+                                         char*             workspace_ptr,
+                                         const size_t      workspace_bytes,
+                                         cudaStream_t      stream)
 {
-    run_gemm<EpilogueOpNoBias>(A, B, weight_scales, nullptr, C, m, n, k, workspace_ptr, workspace_bytes, stream);
+    run_gemm<EpilogueOpNoBias>(A, (WeightType*)B, weight_scales, nullptr, C, m, n, k, workspace_ptr, workspace_bytes, stream);
 }
 
-template<typename T, typename WeightType>
-int CutlassFpAIntBGemmRunner<T, WeightType>::getWorkspaceSize(const int m, const int n, const int k)
+template<typename T, WeightVariant V>
+int CutlassFpAIntBGemmRunner<T, V>::getWorkspaceSize(const int m, const int n, const int k)
 {
     // These are the min tile sizes for each config, which would launch the maximum number of blocks
     const int max_grid_m = (m + 31) / 32;

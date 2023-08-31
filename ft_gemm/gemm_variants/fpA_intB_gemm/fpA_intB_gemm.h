@@ -19,6 +19,7 @@
 #include "cutlass_extensions/ft_gemm_configs.h"
 #include "utils/activation_type.h"
 #include <cuda_runtime_api.h>
+#include "utils/weight_variant.h"
 
 namespace fastertransformer {
 
@@ -34,14 +35,16 @@ namespace fastertransformer {
   modifications to mix_gemm_B_layout.h.
 */
 
-template<typename T, typename WeightType>
+template<typename T, WeightVariant V>
 class CutlassFpAIntBGemmRunner {
 public:
+    using WeightType = typename WeightStorageType<V>::type;
+
     CutlassFpAIntBGemmRunner();
     ~CutlassFpAIntBGemmRunner();
 
     void gemm(const T*          A,
-              const WeightType* B,
+              const char*       B,
               const T*          weight_scales,
               T*                C,
               int               m,
@@ -52,7 +55,7 @@ public:
               cudaStream_t      stream);
 
     void gemm_bias_act(const T*          A,
-                       const WeightType* B,
+                       const char*       B,
                        const T*          weight_scales,
                        const T*          biases,
                        T*                C,

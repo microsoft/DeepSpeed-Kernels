@@ -18,17 +18,20 @@
 #include "cutlass_extensions/ft_gemm_configs.h"
 #include "utils/activation_type.h"
 #include <cuda_runtime_api.h>
+#include "utils/weight_variant.h"
 
 namespace fastertransformer {
 
 template<typename T, /*The type used for activations/scales/compute*/
-         typename WeightType /* The type for the MoE weights */>
+         WeightVariant V /* The type for the MoE weights */>
 class MoeGemmRunner {
 public:
+    using WeightType = typename WeightStorageType<V>::type;
+
     MoeGemmRunner();
 
     void moe_gemm_bias_act(const T*          A,
-                           const WeightType* B,
+                           const char* B,
                            const T*          weight_scales,
                            const T*          biases,
                            T*                C,
@@ -41,7 +44,7 @@ public:
                            cudaStream_t      stream);
 
     void moe_gemm(const T*          A,
-                  const WeightType* B,
+                  const char* B,
                   const T*          weight_scales,
                   T*                C,
                   int64_t*          total_rows_before_expert,

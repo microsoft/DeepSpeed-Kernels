@@ -650,8 +650,8 @@ void dispatch_moe_gemm_to_cutlass(const T*          A,
     }
 }
 
-template<typename T, typename WeightType>
-MoeGemmRunner<T, WeightType>::MoeGemmRunner()
+template<typename T, WeightVariant V>
+MoeGemmRunner<T, V>::MoeGemmRunner()
 {
     int device{-1};
     check_cuda_error(cudaGetDevice(&device));
@@ -659,21 +659,21 @@ MoeGemmRunner<T, WeightType>::MoeGemmRunner()
     check_cuda_error(cudaDeviceGetAttribute(&multi_processor_count_, cudaDevAttrMultiProcessorCount, device));
 }
 
-template<typename T, typename WeightType>
+template<typename T, WeightVariant V>
 template<typename EpilogueTag>
-void MoeGemmRunner<T, WeightType>::dispatch_to_arch<EpilogueTag>(const T*          A,
-                                                                 const WeightType* B,
-                                                                 const T*          weight_scales,
-                                                                 const T*          biases,
-                                                                 T*                C,
-                                                                 int64_t*          total_rows_before_expert,
-                                                                 int64_t           total_rows,
-                                                                 int64_t           gemm_n,
-                                                                 int64_t           gemm_k,
-                                                                 int               num_experts,
-                                                                 CutlassGemmConfig gemm_config,
-                                                                 cudaStream_t      stream,
-                                                                 int*              occupancy)
+void MoeGemmRunner<T, V>::dispatch_to_arch<EpilogueTag>(const T*          A,
+                                                        const WeightType* B,
+                                                        const T*          weight_scales,
+                                                        const T*          biases,
+                                                        T*                C,
+                                                        int64_t*          total_rows_before_expert,
+                                                        int64_t           total_rows,
+                                                        int64_t           gemm_n,
+                                                        int64_t           gemm_k,
+                                                        int               num_experts,
+                                                        CutlassGemmConfig gemm_config,
+                                                        cudaStream_t      stream,
+                                                        int*              occupancy)
 {
     if (sm_ >= 70 && sm_ < 75) {
         dispatch_moe_gemm_to_cutlass<T, WeightType, cutlass::arch::Sm70, EpilogueTag>(A,
@@ -731,19 +731,19 @@ void MoeGemmRunner<T, WeightType>::dispatch_to_arch<EpilogueTag>(const T*       
     }
 }
 
-template<typename T, typename WeightType>
+template<typename T, WeightVariant V>
 template<typename EpilogueTag>
-void MoeGemmRunner<T, WeightType>::run_gemm<EpilogueTag>(const T*          A,
-                                                         const WeightType* B,
-                                                         const T*          weight_scales,
-                                                         const T*          biases,
-                                                         T*                C,
-                                                         int64_t*          total_rows_before_expert,
-                                                         int64_t           total_rows,
-                                                         int64_t           gemm_n,
-                                                         int64_t           gemm_k,
-                                                         int               num_experts,
-                                                         cudaStream_t      stream)
+void MoeGemmRunner<T, V>::run_gemm<EpilogueTag>(const T*          A,
+                                                const WeightType* B,
+                                                const T*          weight_scales,
+                                                const T*          biases,
+                                                T*                C,
+                                                int64_t*          total_rows_before_expert,
+                                                int64_t           total_rows,
+                                                int64_t           gemm_n,
+                                                int64_t           gemm_k,
+                                                int               num_experts,
+                                                cudaStream_t      stream)
 {
     static constexpr bool          is_weight_only    = !std::is_same<T, WeightType>::value;
     static constexpr bool          only_simt_configs = std::is_same<T, float>::value;
@@ -793,24 +793,24 @@ void MoeGemmRunner<T, WeightType>::run_gemm<EpilogueTag>(const T*          A,
                                   stream);
 }
 
-template<typename T, typename WeightType>
-void MoeGemmRunner<T, WeightType>::moe_gemm_bias_act(const T*          A,
-                                                     const WeightType* B,
-                                                     const T*          weight_scales,
-                                                     const T*          biases,
-                                                     T*                C,
-                                                     int64_t*          total_rows_before_expert,
-                                                     int64_t           total_rows,
-                                                     int64_t           gemm_n,
-                                                     int64_t           gemm_k,
-                                                     int               num_experts,
-                                                     ActivationType    activation_type,
-                                                     cudaStream_t      stream)
+template<typename T, WeightVariant V>
+void MoeGemmRunner<T, V>::moe_gemm_bias_act(const T*          A,
+                                            const char* B,
+                                            const T*          weight_scales,
+                                            const T*          biases,
+                                            T*                C,
+                                            int64_t*          total_rows_before_expert,
+                                            int64_t           total_rows,
+                                            int64_t           gemm_n,
+                                            int64_t           gemm_k,
+                                            int               num_experts,
+                                            ActivationType    activation_type,
+                                            cudaStream_t      stream)
 {
     switch (activation_type) {
         case ActivationType::RELU:
             run_gemm<EpilogueOpBiasReLU>(A,
-                                         B,
+                                         (WeightType*)B,
                                          weight_scales,
                                          biases,
                                          C,
@@ -823,7 +823,7 @@ void MoeGemmRunner<T, WeightType>::moe_gemm_bias_act(const T*          A,
             break;
         case ActivationType::GELU:
             run_gemm<EpilogueOpBiasFtGelu>(A,
-                                           B,
+                                           (WeightType*)B,
                                            weight_scales,
                                            biases,
                                            C,
@@ -836,7 +836,7 @@ void MoeGemmRunner<T, WeightType>::moe_gemm_bias_act(const T*          A,
             break;
         case ActivationType::SILU:
             run_gemm<EpilogueOpBiasSilu>(A,
-                                         B,
+                                         (WeightType*)B,
                                          weight_scales,
                                          biases,
                                          C,
@@ -849,7 +849,7 @@ void MoeGemmRunner<T, WeightType>::moe_gemm_bias_act(const T*          A,
             break;
         case ActivationType::IDENTITY:
             run_gemm<EpilogueOpBias>(A,
-                                     B,
+                                     (WeightType*)B,
                                      weight_scales,
                                      biases,
                                      C,
@@ -874,20 +874,20 @@ void MoeGemmRunner<T, WeightType>::moe_gemm_bias_act(const T*          A,
     }
 }
 
-template<typename T, typename WeightType>
-void MoeGemmRunner<T, WeightType>::moe_gemm(const T*          A,
-                                            const WeightType* B,
-                                            const T*          weight_scales,
-                                            T*                C,
-                                            int64_t*          total_rows_before_expert,
-                                            int64_t           total_rows,
-                                            int64_t           gemm_n,
-                                            int64_t           gemm_k,
-                                            int               num_experts,
-                                            cudaStream_t      stream)
+template<typename T, WeightVariant V>
+void MoeGemmRunner<T, V>::moe_gemm(const T*          A,
+                                   const char* B,
+                                   const T*          weight_scales,
+                                   T*                C,
+                                   int64_t*          total_rows_before_expert,
+                                   int64_t           total_rows,
+                                   int64_t           gemm_n,
+                                   int64_t           gemm_k,
+                                   int               num_experts,
+                                   cudaStream_t      stream)
 {
     run_gemm<EpilogueOpNoBias>(
-        A, B, weight_scales, nullptr, C, total_rows_before_expert, total_rows, gemm_n, gemm_k, num_experts, stream);
+        A, (WeightType*)B, weight_scales, nullptr, C, total_rows_before_expert, total_rows, gemm_n, gemm_k, num_experts, stream);
 }
 
 }  // namespace fastertransformer
