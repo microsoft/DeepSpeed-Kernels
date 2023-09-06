@@ -308,6 +308,7 @@ inline __device__ void compute_attn_1rowblock(const Params& params,
         } else {
             flash::apply_mask_causal(scores,
                                      n_block * kBlockN,
+                                     (atom_info.global_q_idx + atom_info.q_len),
                                      (atom_info.kv_blocks - 1) * kBlockN + atom_info.kv_remainder,
                                      atom_info.global_q_idx + (tidx / 32) * 16 + (tidx % 32) / 4,
                                      kNWarps * 16);

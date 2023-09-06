@@ -183,6 +183,7 @@ inline __device__ void apply_mask(Tensor<Engine, Layout>& tensor,
 template <typename Engine, typename Layout>
 inline __device__ void apply_mask_causal(Tensor<Engine, Layout>& tensor,
                                          const uint32_t col_idx_offset_,
+                                         const uint32_t max_seqlen_q,
                                          const uint32_t max_seqlen_k,
                                          const uint32_t row_idx_offset_,
                                          const uint32_t warp_row_stride)
@@ -199,7 +200,7 @@ inline __device__ void apply_mask_causal(Tensor<Engine, Layout>& tensor,
 #pragma unroll
         for (int i = 0; i < size<0, 0>(tensor); ++i) {
             const uint32_t row_idx = row_idx_base + i * 8;
-            const uint32_t col_idx_limit = std::min(max_seqlen_k, row_idx + 1);
+            const uint32_t col_idx_limit = std::min(max_seqlen_k, row_idx + 1 + max_seqlen_k - max_seqlen_q);
 #pragma unroll
             for (int nj = 0; nj < size<1, 1>(tensor); ++nj) {
                 const uint32_t col_idx_base = col_idx_offset + nj * 8;
