@@ -24,52 +24,52 @@ using namespace cute;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <int MMA_M, class... Args, class TiledMMA>
-CUTE_HOST_DEVICE auto make_tiled_copy_A_warpcontiguousM(Copy_Atom<Args...> const& copy_atom,
-                                                        TiledMMA const& tiled_mma)
-{
+template <int MMA_M,
+          class... Args,
+          class TiledMMA>
+CUTE_HOST_DEVICE
+auto
+make_tiled_copy_A_warpcontiguousM(Copy_Atom<Args...> const& copy_atom,
+                                 TiledMMA           const& tiled_mma) {
     using TileShape_MNK = typename TiledMMA::TiledShape_MNK;
     using AtomShape_MNK = typename TiledMMA::AtomShape_MNK;
     constexpr int AtomShape_M = decltype(size<0>(AtomShape_MNK{}))::value;
     constexpr int kNWarps = decltype(size<0>(TileShape_MNK{}))::value / AtomShape_M;
     constexpr int MMAStride_M = MMA_M * AtomShape_M;
-    auto t =
-        make_tile(Layout<Shape<Int<AtomShape_M>, Int<kNWarps>>, Stride<_1, Int<MMAStride_M>>>{},
-                  make_layout(size<2>(TileShape_MNK{})));
+    auto t = make_tile(Layout<Shape<Int<AtomShape_M>, Int<kNWarps>>,
+                              Stride<_1, Int<MMAStride_M>> >{},
+                       make_layout(size<2>(TileShape_MNK{})));
+    // if (cute::thread0()) {printf("make_tiled_copy_A_warpcontiguousM "); print(t); printf("\n");  }
     return make_tiled_copy_impl(copy_atom, tiled_mma.get_layoutA_TV(), t);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <int MMA_M, class... Args, class TiledMMA>
-CUTE_HOST_DEVICE auto make_tiled_copy_C_warpcontiguousM(Copy_Atom<Args...> const& copy_atom,
-                                                        TiledMMA const& tiled_mma)
-{
+template <int MMA_M,
+          class... Args,
+          class TiledMMA>
+CUTE_HOST_DEVICE
+auto
+make_tiled_copy_C_warpcontiguousM(Copy_Atom<Args...> const& copy_atom,
+                                 TiledMMA           const& tiled_mma) {
     using TileShape_MNK = typename TiledMMA::TiledShape_MNK;
     using AtomShape_MNK = typename TiledMMA::AtomShape_MNK;
     constexpr int AtomShape_M = decltype(size<0>(AtomShape_MNK{}))::value;
     constexpr int kNWarps = decltype(size<0>(TileShape_MNK{}))::value / AtomShape_M;
     constexpr int MMAStride_M = MMA_M * AtomShape_M;
-    auto t =
-        make_tile(Layout<Shape<Int<AtomShape_M>, Int<kNWarps>>, Stride<_1, Int<MMAStride_M>>>{},
-                  // TODO: Shouldn't this be size<1>?
-                  make_layout(size<2>(TileShape_MNK{})));
+    auto t = make_tile(Layout<Shape<Int<AtomShape_M>, Int<kNWarps>>,
+                              Stride<_1, Int<MMAStride_M>> >{},
+                       // TODO: Shouldn't this be size<1>?
+                       make_layout(size<2>(TileShape_MNK{})));
+    // if (cute::thread0()) {printf("make_tiled_copy_C_warpcontiguousM "); print(t); printf("\n");  }
     return make_tiled_copy_impl(copy_atom, tiled_mma.get_layoutC_TV(), t);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <bool Is_first,
-          bool Check_inf = false,
-          typename Tensor0,
-          typename Tensor1,
-          typename Tensor2>
-inline __device__ void softmax_rescale_o(Tensor0& scores,
-                                         Tensor1& scores_max,
-                                         Tensor1& scores_sum,
-                                         Tensor2& acc_o,
-                                         float softmax_scale_log2)
-{
+template<bool Is_first, bool Check_inf=false, typename Tensor0, typename Tensor1, typename Tensor2>
+inline __device__ void softmax_rescale_o(Tensor0 &scores, Tensor1 &scores_max, Tensor1 &scores_sum,
+                                         Tensor2 &acc_o, float softmax_scale_log2) {
     if (Is_first) {
         flash::template reduce_max</*zero_init=*/true>(scores, scores_max);
         flash::scale_apply_exp2(scores, scores_max, softmax_scale_log2);
@@ -79,23 +79,21 @@ inline __device__ void softmax_rescale_o(Tensor0& scores,
         cute::copy(scores_max, scores_max_prev);
         flash::template reduce_max</*zero_init=*/false>(scores, scores_max);
         // Reshape acc_o from (MMA=4, MMA_M, MMA_K) to (nrow=(2, MMA_M), ncol=(2, MMA_K))
-        Tensor acc_o_rowcol =
-            make_tensor(acc_o.data(), flash::convert_layout_acc_rowcol(acc_o.layout()));
-#pragma unroll
+        Tensor acc_o_rowcol = make_tensor(acc_o.data(), flash::convert_layout_acc_rowcol(acc_o.layout()));
+        #pragma unroll
         for (int mi = 0; mi < size(scores_max); ++mi) {
-            float scores_max_cur =
-                !Check_inf ? scores_max(mi) : (scores_max(mi) == -INFINITY ? 0.0f : scores_max(mi));
+            float scores_max_cur = !Check_inf
+                ? scores_max(mi)
+                : (scores_max(mi) == -INFINITY ? 0.0f : scores_max(mi));
             float scores_scale = exp2f((scores_max_prev(mi) - scores_max_cur) * softmax_scale_log2);
             scores_sum(mi) *= scores_scale;
-#pragma unroll
-            for (int ni = 0; ni < size<1>(acc_o_rowcol); ++ni) {
-                acc_o_rowcol(mi, ni) *= scores_scale;
-            }
+            #pragma unroll
+            for (int ni = 0; ni < size<1>(acc_o_rowcol); ++ni) { acc_o_rowcol(mi, ni) *= scores_scale; }
         }
         flash::scale_apply_exp2(scores, scores_max, softmax_scale_log2);
         Tensor scores_sum_cur = make_fragment_like(scores_sum);
         flash::reduce_sum(scores, scores_sum_cur);
-#pragma unroll
+        #pragma unroll
         for (int mi = 0; mi < size(scores_sum); ++mi) { scores_sum(mi) += scores_sum_cur(mi); }
     }
 };
@@ -200,8 +198,7 @@ inline __device__ void compute_attn_1rowblock(const Params& params,
     auto smem_thr_copy_K = smem_tiled_copy_K.get_thread_slice(tidx);
     Tensor tSsK = smem_thr_copy_K.partition_S(sK);
 
-    auto smem_tiled_copy_V = make_tiled_copy_B(typename Kernel_traits::SmemCopyAtomTransposed{},
-                                               tiled_mma);
+    auto smem_tiled_copy_V = make_tiled_copy_B(typename Kernel_traits::SmemCopyAtomTransposed{}, tiled_mma);
     auto smem_thr_copy_V = smem_tiled_copy_V.get_thread_slice(tidx);
     Tensor tOsVt = smem_thr_copy_V.partition_S(sVt);
 
@@ -254,7 +251,7 @@ inline __device__ void compute_attn_1rowblock(const Params& params,
 
     int n_block = atom_info.kv_blocks - 1;
     // We don't need to clear the sK smem tiles since we'll mask out the scores anyway.
-    flash::copy<false, Is_even_K>(gmem_tiled_copy_QKV, tKgK, tKsK, tKVcKV, tKVpKV, atom_info.kv_remainder);
+    flash::copy<false, Is_even_K>(gmem_tiled_copy_QKV, tKgK, tKsK, tKVcKV, tKVpKV, atom_info.total_extent - n_block * kBlockN);
     cute::cp_async_fence();
 
     if (Kernel_traits::Is_Q_in_regs && !Kernel_traits::Share_Q_K_smem) {
@@ -273,7 +270,9 @@ inline __device__ void compute_attn_1rowblock(const Params& params,
     // We also need masking on S if it's causal, for the last ceil_div(kBlockM, kBlockN) blocks.
     // We will have at least 1 "masking" iteration.
 
-    constexpr int n_masking_steps = Is_causal ? cute::ceil_div(kBlockM, kBlockN) : 1;
+    constexpr int n_masking_steps = !Is_causal
+        ? 1
+        : cute::ceil_div(kBlockM, kBlockN) + 1;
 #pragma unroll
     for (int masking_step = 0; masking_step < n_masking_steps; ++masking_step, --n_block) {
         Tensor acc_s = partition_fragment_C(
@@ -285,13 +284,13 @@ inline __device__ void compute_attn_1rowblock(const Params& params,
         // Advance gV
         if (masking_step > 0) {
             tVgV.data() = tVgV.data() + (block_idx_list[n_block] - block_idx_list[n_block + 1]) *
-                                            int(kBlockN * params.v_row_stride);
+                                        int(kBlockN * params.v_row_stride);
             flash::copy</*Is_even_MN=*/true, Is_even_K>(
                 gmem_tiled_copy_QKV, tVgV, tVsV, tKVcKV, tKVpKV);
         } else {
             // Clear the smem tiles to account for predicated off loads
             flash::copy<false, Is_even_K, /*Clear_OOB_MN=*/true>(
-                gmem_tiled_copy_QKV, tVgV, tVsV, tKVcKV, tKVpKV, atom_info.kv_remainder);
+                gmem_tiled_copy_QKV, tVgV, tVsV, tKVcKV, tKVpKV, atom_info.total_extent - n_block * kBlockN);
         }
         cute::cp_async_fence();
 
@@ -304,13 +303,13 @@ inline __device__ void compute_attn_1rowblock(const Params& params,
         // for rows outside actual_seqlen_k. So those rows could have Inf / NaN, and the matmul
         // can produce Inf / NaN.
         if (!Is_causal) {
-            flash::apply_mask(scores, atom_info.kv_remainder);
+            flash::apply_mask(scores, atom_info.total_extent);
         } else {
             flash::apply_mask_causal(scores,
                                      n_block * kBlockN,
-                                     (atom_info.global_q_idx + atom_info.q_len),
-                                     (atom_info.kv_blocks - 1) * kBlockN + atom_info.kv_remainder,
+                                     atom_info.total_extent,
                                      atom_info.global_q_idx + (tidx / 32) * 16 + (tidx % 32) / 4,
+                                     atom_info.total_extent,
                                      kNWarps * 16);
         }
 
@@ -337,8 +336,7 @@ inline __device__ void compute_attn_1rowblock(const Params& params,
         Tensor rP = flash::convert_type<Element>(scores);
         // Reshape rP from (nrow=(2, MMA_M), ncol=(2, MMA_N)) to ((2, 2, 2), MMA_M, MMA_N / 2)
         // if using m16n8k16 or ((2, 2, 1), MMA_M, MMA_N) if using m16n8k8.
-        Tensor tOrP = make_tensor(
-            rP.data(), flash::convert_layout_rowcol_Aregs<Kernel_traits::TiledMma>(rP.layout()));
+        Tensor tOrP = make_tensor(rP.data(), flash::convert_layout_rowcol_Aregs<Kernel_traits::TiledMma>(rP.layout()));
 
         flash::gemm_A_in_regs(acc_o, tOrP, tOrVt, tOsVt, tiled_mma, smem_tiled_copy_V, smem_thr_copy_V);
 
@@ -395,15 +393,11 @@ inline __device__ void compute_attn_1rowblock(const Params& params,
     // Epilogue
 
     // Reshape acc_o from (MMA=4, MMA_M, MMA_K) to (nrow=(2, MMA_M), ncol=(2, MMA_K))
-    Tensor acc_o_rowcol =
-        make_tensor(acc_o.data(), flash::convert_layout_acc_rowcol(acc_o.layout()));
-    Tensor lse = make_fragment_like(scores_sum);
-#pragma unroll
+    Tensor acc_o_rowcol = make_tensor(acc_o.data(), flash::convert_layout_acc_rowcol(acc_o.layout()));
+    #pragma unroll
     for (int mi = 0; mi < size<0>(acc_o_rowcol); ++mi) {
         float sum = scores_sum(mi);
         float inv_sum = (sum == 0.f || sum != sum) ? 1.f : 1.f / sum;
-        lse(mi) = (sum == 0.f || sum != sum) ? INFINITY
-                                             : scores_max(mi) * params.scale_softmax + __logf(sum);
         float scale = inv_sum;
 #pragma unroll
         for (int ni = 0; ni < size<1>(acc_o_rowcol); ++ni) { acc_o_rowcol(mi, ni) *= scale; }
@@ -411,14 +405,14 @@ inline __device__ void compute_attn_1rowblock(const Params& params,
 
     // Convert acc_o from fp32 to fp16/bf16
     Tensor rO = flash::convert_type<Element>(acc_o);
-    Tensor sO = make_tensor(sQ.data(), typename Kernel_traits::SmemLayoutO{});  // (SMEM_M,SMEM_N)
-    // Partition sO to match the accumulator partitioning
+
+    Tensor sO = make_tensor(sQ.data(), typename Kernel_traits::SmemLayoutO{});    // (SMEM_M,SMEM_N)    // Partition sO to match the accumulator partitioning
     auto smem_tiled_copy_O = make_tiled_copy_C(typename Kernel_traits::SmemCopyAtomO{}, tiled_mma);
     auto smem_thr_copy_O = smem_tiled_copy_O.get_thread_slice(tidx);
     // auto smem_thr_copy_O = make_tiled_copy_C_warpcontiguousM<MMA_M>(typename
     // Kernel_traits::SmemCopyAtomO{}, tiled_mma).get_thread_slice(tidx);
-    Tensor taccOrO = smem_thr_copy_O.retile_S(rO);     // ((Atom,AtomNum), MMA_M, MMA_N)
-    Tensor taccOsO = smem_thr_copy_O.partition_D(sO);  // ((Atom,AtomNum),PIPE_M,PIPE_N)
+    Tensor taccOrO = smem_thr_copy_O.retile_S(rO);        // ((Atom,AtomNum), MMA_M, MMA_N)
+    Tensor taccOsO = smem_thr_copy_O.partition_D(sO);     // ((Atom,AtomNum),PIPE_M,PIPE_N)
 
     // sO has the same size as sQ, so we don't need to sync here.
     if (Kernel_traits::Share_Q_K_smem) { __syncthreads(); }
