@@ -95,7 +95,7 @@ set_property(TARGET ${LIB_NAME} PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 target_link_libraries(${LIB_NAME} PRIVATE cutlass_heuristic)
 
 target_compile_options(${LIB_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${NVCC_FLAGS}>)
-set_target_properties(${LIB_NAME} PROPERTIES CUDA_ARCHITECTURES "70;75;80;86;89;90")
+set_target_properties(${LIB_NAME} PROPERTIES CUDA_ARCHITECTURES "70;75;80;86")
 set_target_properties(${LIB_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../lib)
 
 # Show timings?
