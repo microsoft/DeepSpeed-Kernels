@@ -1,0 +1,8 @@
+How to programmatically figure out the tmp build path?
+  * current: build/lib.linux-x86_64-cpython-310/dskernels
+  * This is needed as the LIBRARY_OUTPUT_DIRECTORY path in CMake
+
+Allow env variable support to set different compute-caps, currently hardcoded to 8.6
+  * we should probably default to native for dev source installs
+  * allow support for passing in CC targets for portable dist
+
