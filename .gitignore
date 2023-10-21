@@ -1,5 +1,7 @@
 **/build/**
 **/lib/**
 
+dskernels/version.py
+
 # Dev/IDE data
 .vscode
