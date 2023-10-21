@@ -15,7 +15,6 @@ def fetch_requirements(path):
 
 
 install_requires = fetch_requirements('requirements/requirements.txt')
-
 extras_require = {"dev": fetch_requirements('requirements/requirements-dev.txt')}
 
 
@@ -73,6 +72,15 @@ with open("dskernels/version.py", 'w') as fd:
     fd.write(f"__version__ = '{version_str}'\n")
 
 
+from builder.builder import CMakeBuild
+from builder.ft_gemm import FTGemmBuilder
+from builder.inf_flash_attn import BlockedFlashBuilder
+ext_modules = [] 
+ext_modules.append(FTGemmBuilder(name="deepspeed_ft_gemm"))
+ext_modules.append(BlockedFlashBuilder(name="deepspeed_blocked_flash"))
+build_ext = {'build_ext': CMakeBuild}
+
+
 setup(name="deepspeed-kernels",
       version=version_str,
       description='deepspeed kernels',
@@ -85,6 +93,9 @@ setup(name="deepspeed-kernels",
       },
       install_requires=install_requires,
       extras_require=extras_require,
+      ext_modules=ext_modules,
+      cmdclass=build_ext,
+      include_package_data=True,
       packages=find_packages(include=['dskernels']),
       classifiers=[
           'Programming Language :: Python :: 3.7',
