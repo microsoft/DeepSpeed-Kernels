@@ -7,3 +7,7 @@ Allow env variable support to set different compute-caps, currently hardcoded to
   * allow support for passing in CC targets for portable dist
 
 [x] API for getting kernel path based on library name
+
+Push dskernels to pypi
+Add dskernels as hard dep for MII
+Add dskernels as dev dep to DS
