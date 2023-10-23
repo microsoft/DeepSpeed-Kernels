@@ -43,6 +43,16 @@ else:
     git_hash = "unknown"
     git_branch = "unknown"
 
+
+# Ensure all submodules have been pulled in
+git_submodules = "git submodule update --init --recursive"
+if command_exists('git'):
+    try:
+        result = subprocess.check_output(git_submodules, shell=True)
+    except subprocess.CalledProcessError:
+        pass
+
+
 # Parse the MII version string from version.txt
 version_str = open('version.txt', 'r').read().strip()
 
@@ -75,10 +85,11 @@ with open("dskernels/version.py", 'w') as fd:
 from builder.builder import CMakeBuild
 from builder.ft_gemm import FTGemmBuilder
 from builder.inf_flash_attn import BlockedFlashBuilder
-ext_modules = [] 
+ext_modules = []
+build_ext = {'build_ext': CMakeBuild}
+
 ext_modules.append(FTGemmBuilder(name="deepspeed_ft_gemm"))
 ext_modules.append(BlockedFlashBuilder(name="deepspeed_blocked_flash"))
-build_ext = {'build_ext': CMakeBuild}
 
 
 setup(name="deepspeed-kernels",

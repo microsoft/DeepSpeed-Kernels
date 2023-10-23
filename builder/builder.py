@@ -20,7 +20,19 @@ class CMakeBuild(build_ext):
             self.build_extension(ext)
 
     def build_extension(self, ext):
-       abs_build_temp = os.path.abspath(self.build_temp)
-       abs_build_temp = os.path.join(abs_build_temp, ext.name)
-       subprocess.check_call(['cmake', '-B', abs_build_temp], cwd=ext.source)
-       subprocess.check_call(['make', '-j'], cwd=abs_build_temp)
+        # Build in kernel unique sub-directory inside temp build directory
+        abs_build_temp = os.path.abspath(self.build_temp)
+        abs_build_temp = os.path.join(abs_build_temp, ext.name)
+
+        # Pass through CUDA_ARCH_LIST if defined, otherwise fall back to native
+        cuda_arch_list = os.environ.get('CUDA_ARCH_LIST', 'native')
+
+        # Destination path for final binaries
+        abs_build_lib = os.path.abspath(self.build_lib)
+
+        subprocess.check_call(['cmake',
+                               '-B', abs_build_temp,
+                               f'-DLIB_OUTPUT_DIR={abs_build_lib}',
+                               f'-DCUDA_ARCH_LIST={cuda_arch_list}'],
+                               cwd=ext.source)
+        subprocess.check_call(['make', '-j'], cwd=abs_build_temp)
