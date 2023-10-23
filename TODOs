@@ -1,4 +1,4 @@
-Python whl isn't python version agnostic, but there shouldn't be 
+Python whl isn't technically python version agnostic, but there shouldn't be 
   anything restricting us on py version in the code itself
 
 Push dskernels to pypi

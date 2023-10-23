@@ -14,6 +14,7 @@ class CMakeExtension(Extension):
         super().__init__(name, sources)
 
 
+
 class CMakeBuild(build_ext):
     def run(self):
         for ext in self.extensions:
@@ -28,7 +29,7 @@ class CMakeBuild(build_ext):
         cuda_arch_list = os.environ.get('CUDA_ARCH_LIST', 'native')
 
         # Destination path for final binaries
-        abs_build_lib = os.path.abspath(self.build_lib)
+        abs_build_lib = os.path.join(os.path.abspath(self.build_lib), "dskernels")
 
         subprocess.check_call(['cmake',
                                '-B', abs_build_temp,
