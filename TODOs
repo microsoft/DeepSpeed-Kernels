@@ -6,3 +6,4 @@ Allow env variable support to set different compute-caps, currently hardcoded to
   * we should probably default to native for dev source installs
   * allow support for passing in CC targets for portable dist
 
+API for getting kernel path based on library name
