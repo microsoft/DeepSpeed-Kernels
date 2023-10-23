@@ -1,4 +1,1 @@
-include dskernels/libdeepspeedft.so
-include dskernels/libblockedflash.so
-recursive-include dskernels *.so
-include *.so
+include dskernels/*.so
