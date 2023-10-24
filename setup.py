@@ -15,7 +15,9 @@ def fetch_requirements(path):
 
 
 install_requires = fetch_requirements('requirements/requirements.txt')
-extras_require = {"dev": fetch_requirements('requirements/requirements-dev.txt')}
+extras_require = {
+    "dev": fetch_requirements('requirements/requirements-dev.txt')
+}
 
 
 def command_exists(cmd):
@@ -23,7 +25,9 @@ def command_exists(cmd):
         result = subprocess.Popen(f'{cmd}', stdout=subprocess.PIPE, shell=True)
         return result.wait() == 1
     else:
-        result = subprocess.Popen(f'type {cmd}', stdout=subprocess.PIPE, shell=True)
+        result = subprocess.Popen(f'type {cmd}',
+                                  stdout=subprocess.PIPE,
+                                  shell=True)
         return result.wait() == 0
 
 
@@ -43,7 +47,6 @@ else:
     git_hash = "unknown"
     git_branch = "unknown"
 
-
 # Ensure all submodules have been pulled in
 git_submodules = "git submodule update --init --recursive"
 if command_exists('git'):
@@ -51,7 +54,6 @@ if command_exists('git'):
         result = subprocess.check_output(git_submodules, shell=True)
     except subprocess.CalledProcessError:
         pass
-
 
 # Parse the MII version string from version.txt
 version_str = open('version.txt', 'r').read().strip()
@@ -81,16 +83,15 @@ else:
 with open("dskernels/version.py", 'w') as fd:
     fd.write(f"__version__ = '{version_str}'\n")
 
-
 from builder.builder import CMakeBuild
 from builder.ft_gemm import FTGemmBuilder
 from builder.inf_flash_attn import BlockedFlashBuilder
+
 ext_modules = []
 build_ext = {'build_ext': CMakeBuild}
 
 ext_modules.append(FTGemmBuilder(name="deepspeed_ft_gemm"))
 ext_modules.append(BlockedFlashBuilder(name="deepspeed_blocked_flash"))
-
 
 setup(name="deepspeed-kernels",
       version=version_str,
