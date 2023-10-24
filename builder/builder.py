@@ -72,9 +72,8 @@ class CMakeBuild(build_ext):
         abs_build_lib = os.path.join(os.path.abspath(self.build_lib),
                                      "dskernels")
 
-        subprocess.check_call([
-            'cmake', '-B', abs_build_temp, f'-DLIB_OUTPUT_DIR={abs_build_lib}',
-            f'-DCUDA_ARCH_LIST={cuda_arch_list}'
-        ],
-                              cwd=ext.source)
+        subprocess.check_call(['cmake', '-B', abs_build_temp, 
+                               f'-DLIB_OUTPUT_DIR={abs_build_lib}',
+                               f'-DCUDA_ARCH_LIST={cuda_arch_list}'],
+                               cwd=ext.source)
         subprocess.check_call(['make', '-j'], cwd=abs_build_temp)
