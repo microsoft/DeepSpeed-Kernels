@@ -7,7 +7,7 @@ TODO: add short description of what this repo is for
 
 # Installation
 
-## Installation from PyPI
+## PyPI
 
 If your environment supports it you can quickly install DeepSpeed-Kernels from [PyPI](https://pypi.org/project/deepspeed-kernels/) (see below). 
 
@@ -20,13 +20,13 @@ The release on PyPI should work with the following assumptions about your enviro
 pip install deepspeed-kernels
 ```
 
-## Installation from source
+## Source
 If the PyPI release does not work for you we recommend installing from source which can take several minutes:
 ```bash
 pip install -v .
 ```
 
-## Advanced Installation
+## Advanced
 
 You can create a pre-compiled portable wheel that supports different CUDA architectures via the `CUDA_ARCH_LIST` environment variable. By default the kernels will be compiled using the `native` compute capability. If you want to compile for more than one you can set the `CUDA_ARCH_LIST` environment variable. We currently only support Ampere and above architectures (i.e., 8.0+). See example below to build for GPUs like A100 and A6000:
 ```bash
