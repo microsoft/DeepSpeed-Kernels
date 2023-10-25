@@ -34,7 +34,7 @@ def command_exists(cmd):
 # Write out version/git info
 git_hash_cmd = "git rev-parse --short HEAD"
 git_branch_cmd = "git rev-parse --abbrev-ref HEAD"
-if command_exists('git') and 'DS_BUILD_STRING' not in os.environ:
+if command_exists('git') and 'DS_KERNELS_BUILD_STRING' not in os.environ:
     try:
         result = subprocess.check_output(git_hash_cmd, shell=True)
         git_hash = result.decode('utf-8').strip()
