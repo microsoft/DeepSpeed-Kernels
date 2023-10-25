@@ -2,7 +2,6 @@ name: build
 
 on:
   pull_request:
-  workflow_dispatch:
 
 jobs:
   build:
@@ -14,18 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-        - name: environment
-          run: |
-            which python
-            python --version
+      - name: environment
+        run: |
+          which python
+          python --version
 
-        - name: build
-          run: |
-            git config --global --add safe.directory /__w/DeepSpeed-Kernels/DeepSpeed-Kernels
-            git submodule update --init --recursive
+      - name: build
+        run: |
+          git config --global --add safe.directory /__w/DeepSpeed-Kernels/DeepSpeed-Kernels
+          git submodule update --init --recursive
 
-            ts=$(date +%s)
-            DS_KERNELS_BUILD_STRING=".dev${ts}" CUDA_ARCH_LIST="80;86;89;90" python setup.py bdist_wheel
-            fname=$(ls dist)
-            nname=$(echo $fname | sed 's/cp[0-9]\+-cp[0-9]\+/py3-none/' | sed 's/linux/manylinux1/')
-            mv "dist/$fname" "dist/$nname"
+          ts=$(date +%s)
+          DS_KERNELS_BUILD_STRING=".dev${ts}" CUDA_ARCH_LIST="80;86;89;90" python setup.py bdist_wheel
+          fname=$(ls dist)
+          nname=$(echo $fname | sed 's/cp[0-9]\+-cp[0-9]\+/py3-none/' | sed 's/linux/manylinux1/')
+          mv "dist/$fname" "dist/$nname"
