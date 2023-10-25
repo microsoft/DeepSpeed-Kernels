@@ -12,8 +12,8 @@ TODO: add short description of what this repo is for
 If your environment supports it you can quickly install DeepSpeed-Kernels from [PyPI](https://pypi.org/project/deepspeed-kernels/) (see below). 
 
 The release on PyPI should work with the following assumptions about your environment:
-* NVIDIA GPU(s) with compute capability of: 8.0, 8.6
-* CUDA 11.7+
+* NVIDIA GPU(s) with compute capability of: 8.0, 8.6, 8.9, 9.0
+* CUDA 11.6+
 * Ubuntu 20+
 
 ```bash
