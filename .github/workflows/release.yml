@@ -1,6 +1,0 @@
-name: Build and publish DeepSpeed release
-
-on:
-  push:
-    tags:
-      - 'v*.*.*'
