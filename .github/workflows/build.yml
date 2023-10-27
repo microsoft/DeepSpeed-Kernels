@@ -10,6 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
 
       - name: environment
         run: |
@@ -23,8 +25,6 @@ jobs:
         run: |
           pwd
           ls -al
-          git submodule update --init --recursive
-
           ts=$(date +%s)
           DS_KERNELS_BUILD_STRING=".dev${ts}" CUDA_ARCH_LIST="80;86;89;90" python setup.py bdist_wheel
           fname=$(ls dist)
