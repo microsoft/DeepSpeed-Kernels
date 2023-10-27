@@ -7,8 +7,8 @@ jobs:
   build:
 
     runs-on: [self-hosted, cpu]
-#    container:
-#      image: nvcr.io/nvidia/pytorch:22.12-py3
+    container:
+      image: nvcr.io/nvidia/pytorch:22.12-py3
 
     steps:
       - uses: actions/checkout@v3
