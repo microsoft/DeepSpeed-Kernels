@@ -20,7 +20,6 @@ jobs:
 
       - name: build
         run: |
-          git config --global --add safe.directory /__w/DeepSpeed-Kernels/DeepSpeed-Kernels
           git submodule update --init --recursive
 
           ts=$(date +%s)
