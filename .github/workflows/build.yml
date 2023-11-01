@@ -10,8 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
+#        with:
+#          submodules: 'recursive'
 
       - name: environment
         run: |
@@ -20,13 +20,14 @@ jobs:
           nvcc --version
           python -c "import torch; print('torch:', torch.__version__, torch)"
           python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
+          git --version
 
       - name: build
         run: |
           pwd
           ls -al
-          ts=$(date +%s)
-          DS_KERNELS_BUILD_STRING=".dev${ts}" CUDA_ARCH_LIST="80;86;89;90" python setup.py bdist_wheel
-          fname=$(ls dist)
-          nname=$(echo $fname | sed 's/cp[0-9]\+-cp[0-9]\+/py3-none/' | sed 's/linux/manylinux1/')
-          mv "dist/$fname" "dist/$nname"
+          #ts=$(date +%s)
+          #DS_KERNELS_BUILD_STRING=".dev${ts}" CUDA_ARCH_LIST="80;86;89;90" python setup.py bdist_wheel
+          #fname=$(ls dist)
+          #nname=$(echo $fname | sed 's/cp[0-9]\+-cp[0-9]\+/py3-none/' | sed 's/linux/manylinux1/')
+          #mv "dist/$fname" "dist/$nname"
