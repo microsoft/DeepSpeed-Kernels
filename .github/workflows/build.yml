@@ -17,7 +17,9 @@ jobs:
         run: |
           which python
           python --version
+          which nvcc
           nvcc --version
+          /usr/local/cuda/bin/nvcc --version
           python -c "import torch; print('torch:', torch.__version__, torch)"
           python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
           git --version
