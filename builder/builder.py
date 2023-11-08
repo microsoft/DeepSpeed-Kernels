@@ -76,4 +76,9 @@ class CMakeBuild(build_ext):
                                f'-DLIB_OUTPUT_DIR={abs_build_lib}',
                                f'-DCUDA_ARCH_LIST={cuda_arch_list}'],
                                cwd=ext.source)
-        subprocess.check_call(['make', '-j'], cwd=abs_build_temp)
+
+        # Allow user to specify degree of make parallelism
+        make_jobs = os.environ.get('DS_KERNELS_MAKE_JOBS', None)
+        make_cmd = f"make -j {make_jobs}" if make_jobs else "make -j"
+        subprocess.check_call(make_cmd.split(" "), cwd=abs_build_temp)
+
