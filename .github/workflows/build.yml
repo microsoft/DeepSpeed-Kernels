@@ -29,7 +29,7 @@ jobs:
           pwd
           ls -al
           ts=$(date +%s)
-          DS_KERNELS_BUILD_STRING=".dev${ts}" CUDA_ARCH_LIST="80;86" python setup.py bdist_wheel
+          DS_KERNELS_MAKE_JOBS=10 DS_KERNELS_BUILD_STRING=".dev${ts}" CUDA_ARCH_LIST="80;86" python setup.py bdist_wheel
           #DS_KERNELS_BUILD_STRING=".dev${ts}" CUDA_ARCH_LIST="80;86;89;90" python setup.py bdist_wheel
           fname=$(ls dist)
           nname=$(echo $fname | sed 's/cp[0-9]\+-cp[0-9]\+/py3-none/' | sed 's/linux/manylinux1/')
