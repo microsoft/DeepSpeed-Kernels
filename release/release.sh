@@ -2,6 +2,8 @@ set -ex
 
 rm -rf dist
 
+#export DS_KERNELS_MAKE_JOBS=10
+
 ts=$(date +%s)
 DS_KERNELS_BUILD_STRING=".dev${ts}" CUDA_ARCH_LIST="80;86" python setup.py bdist_wheel
 
