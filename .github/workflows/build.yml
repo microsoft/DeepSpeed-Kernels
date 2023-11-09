@@ -30,3 +30,8 @@ jobs:
           nname=$(echo $fname | sed 's/cp[0-9]\+-cp[0-9]\+/py3-none/' | sed 's/linux/manylinux1/')
           mv "dist/$fname" "dist/$nname"
           ls -al
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: deepspeed-kernels-whl
+          path: dist/*.whl
