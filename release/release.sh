@@ -2,6 +2,7 @@ set -ex
 
 rm -rf dist
 
+# enable to reduce overall memory consumption if running on a small VM
 #export DS_KERNELS_MAKE_JOBS=10
 
 ts=$(date +%s)
