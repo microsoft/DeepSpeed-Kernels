@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: [self-hosted, cpu]
-    environment: release-env    
+    environment: release-env
 
     steps:
       - uses: actions/checkout@v3
