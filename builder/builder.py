@@ -79,5 +79,5 @@ class CMakeBuild(build_ext):
 
         # Allow user to specify degree of make parallelism
         make_jobs = os.environ.get('DS_KERNELS_MAKE_JOBS', None)
-        make_cmd = f"make -j {make_jobs}" if make_jobs else "make -j"
+        make_cmd = f"make -j {make_jobs}" if make_jobs is not None else "make -j"
         subprocess.check_call(make_cmd.split(" "), cwd=abs_build_temp)
