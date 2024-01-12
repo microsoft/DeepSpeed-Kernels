@@ -233,6 +233,57 @@ struct dispatch_stages {
 
 template<typename T,
          typename WeightType,
+         typename EpilogueTag,
+         typename ThreadblockShape,
+         typename WarpShape,
+         int Stages>
+struct dispatch_stages<T,
+                       WeightType,
+                       cutlass::arch::Sm90,
+                       EpilogueTag,
+                       ThreadblockShape,
+                       WarpShape,
+                       Stages,
+                       typename std::enable_if<(Stages > 2)>::type> {
+    static void dispatch(const T*          A,
+                         const WeightType* B,
+                         const T*          weight_scales,
+                         const T*          biases,
+                         T*                C,
+                         int64_t*          total_rows_before_expert,
+                         int64_t           gemm_n,
+                         int64_t           gemm_k,
+                         int               num_experts,
+                         CutlassGemmConfig gemm_config,
+                         int               multi_processor_count,
+                         cudaStream_t      stream,
+                         int*              occupancy = nullptr)
+    {
+        generic_moe_gemm_kernelLauncher<T,
+                                        WeightType,
+                                        cutlass::arch::Sm90,
+                                        EpilogueTag,
+                                        ThreadblockShape,
+                                        WarpShape,
+                                        Stages>(A,
+                                                B,
+                                                weight_scales,
+                                                biases,
+                                                C,
+                                                total_rows_before_expert,
+                                                gemm_n,
+                                                gemm_k,
+                                                num_experts,
+                                                gemm_config,
+                                                multi_processor_count,
+                                                stream,
+                                                occupancy);
+    }
+};
+
+
+template<typename T,
+         typename WeightType,
          typename arch,
          typename EpilogueTag,
          typename ThreadblockShape,
@@ -724,6 +775,22 @@ void MoeGemmRunner<T, V>::dispatch_to_arch<EpilogueTag>(const T*          A,
                                                                                       sm_,
                                                                                       multi_processor_count_,
                                                                                       stream,
+                                                                                      occupancy);
+    }
+    else if (sm_ >=90) {
+        dispatch_moe_gemm_to_cutlass<T, WeightType, cutlass::arch::Sm80, EpilogueTag>(A, 
+                                                                                      B, 
+                                                                                      weight_scales, 
+                                                                                      biases, 
+                                                                                      C,
+                                                                                      total_rows_before_expert, 
+                                                                                      total_rows, gemm_n, 
+                                                                                      gemm_k, 
+                                                                                      num_experts, 
+                                                                                      gemm_config, 
+                                                                                      sm_, 
+                                                                                      multi_processor_count_,
+                                                                                      stream, 
                                                                                       occupancy);
     }
     else {
